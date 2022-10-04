@@ -14,6 +14,7 @@ export class AuthService {
                 private jwtService: JwtService) {}
 
     async signIn(dto) {
+        // Get profile from database
         let profile;
         try {
             profile = await this.authenticateUser(dto.email, dto.password);
@@ -21,6 +22,7 @@ export class AuthService {
             return e.message;
         }
 
+        // Generate JWT tokens
         const payload = { email: profile.email };
         const tokens = {
             access_token: this.jwtService.sign(payload, {
@@ -33,6 +35,7 @@ export class AuthService {
             }),
         };
 
+        // Set refresh token on User model in database
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
 
         return tokens;
@@ -40,6 +43,7 @@ export class AuthService {
     async signUp(dto) {
         const hashedPassword = hash(dto.password);
 
+        // Get profile from database
         let profile;
         try {
             profile = await this.userDBService.createUser(
@@ -49,8 +53,8 @@ export class AuthService {
             return e.message;
         }
 
+        // Generate tokens
         const payload = { email: profile.email };
-
         const tokens = {
             access_token: this.jwtService.sign(payload, {
                 secret: jwtConstants.accessSecret,
@@ -67,11 +71,13 @@ export class AuthService {
         return tokens;
     }
     async refresh(dto) {
+        // Check whether refresh token is valid
         const jwt = await this.jwtService.verify(dto.token, {secret: jwtConstants.refreshSecret})
 
+        // Get refresh token from db and check whether it is same as given
         const profile = await this.userDBService.getUser(jwt.email);
         if (profile.refreshToken !== dto.token) {
-            return 'Access denied'
+            return 'Access denied';
         }
 
         const payload = {email: jwt.email};
@@ -92,6 +98,7 @@ export class AuthService {
         return tokens;
     }
 
+    // Check whether password matches email
     async authenticateUser(email, password) {
         const hashedPassword = hash(password);
 

@@ -3,6 +3,8 @@ import { JwtService } from "@nestjs/jwt";
 import {jwtConstants} from "./constants";
 import { UserDbService } from "./user.db.service";
 
+// This guard will reject if user is not authorized, that is access token verification fails
+
 @Injectable()
 export class AuthGuard implements CanActivate {
     constructor(private readonly userDBService: UserDbService,
