@@ -2,5 +2,5 @@ const path = require('path');
 module.exports = {
    'seeders-path': path.resolve('src', 'seeders'),
    'migrations-path': path.resolve('src', 'migrations'),
-   'config': path.resolve('src/config', 'config.ts'),
+   'config': path.resolve('src/config', 'config.js'),
 }

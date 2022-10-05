@@ -1,13 +1,17 @@
-{
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+module.exports = {
   "development": {
-    "username": "uwewhwzlsojllz",
-    "password": "1cad9ebcf3039ae7165fa2de12b0b14316c3429a9c44788a2f579d83aa10bb09",
-    "database": "djqlot4dmsjig",
-    "host": "ec2-3-223-242-224.compute-1.amazonaws.com",
+    "username": process.env.USER,
+    "password": process.env.PASSWORD,
+    "database": process.env.DATABASE,
+    "host": process.env.HOST,
     "dialect": "postgres",
     "dialectOptions": {
       "ssl": {
-        "require": true,
+        "require": false,
         "rejectUnauthorized": false
       }
     }
