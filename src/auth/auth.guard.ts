@@ -1,6 +1,6 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {Injectable, CanActivate, ExecutionContext, UseFilters} from '@nestjs/common';
 import { JwtService } from "@nestjs/jwt";
-import { UserDbService } from "./user.db.service";
+import { UserDbService } from "../user/user.db.service";
 import * as dotenv from 'dotenv';
 
 dotenv.config()
@@ -37,7 +37,6 @@ export class AuthGuard implements CanActivate {
             }
 
         } catch (e) {
-            console.log(e)
             return false;
         }
         return true;
