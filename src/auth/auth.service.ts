@@ -33,10 +33,13 @@ export class AuthService {
         } catch (e) {
             return e.message;
         }
-
         // Generate JWT tokens
-        const payload = { email: profile.email };
-        const tokens = this.generateTokens(payload)
+        const accessPayload = {
+            email: profile.email, id: profile.id,
+            name: profile.name, role: profile.role };
+        const refreshPayload = { email: profile.email };
+
+        const tokens = this.generateTokens(accessPayload, refreshPayload)
 
         // Set refresh token on User model in database
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
@@ -57,8 +60,13 @@ export class AuthService {
         }
 
         // Generate tokens
-        const payload = { email: profile.email };
-        const tokens = this.generateTokens(payload)
+        const accessPayload = {
+            email: profile.email, id: profile.id,
+            name: profile.name, role: profile.role };
+        const refreshPayload = { email: profile.email };
+
+        const tokens = this.generateTokens(accessPayload, refreshPayload)
+
 
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
 
@@ -74,11 +82,15 @@ export class AuthService {
             return 'Access denied';
         }
 
-        const payload = {email: jwt.email};
+        const accessPayload = {
+            email: profile.email, id: profile.id,
+            name: profile.name, role: profile.role };
+        const refreshPayload = { email: profile.email };
 
-        const tokens = this.generateTokens(payload)
+        const tokens = this.generateTokens(accessPayload, refreshPayload)
 
-        await this.userDBService.setRefresh(payload.email, tokens.refresh_token);
+
+        await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
 
         return tokens;
     }
@@ -104,13 +116,13 @@ export class AuthService {
             throw new Error('Incorrect password');
         }
     }
-    generateTokens(payload) {
+    generateTokens(accessPayload, refreshPayload) {
         return {
-            access_token: this.jwtService.sign(payload, {
+            access_token: this.jwtService.sign(accessPayload, {
                 secret: jwtSecrets.access,
                 expiresIn: jwtExpiration.access
             }),
-            refresh_token: this.jwtService.sign(payload, {
+            refresh_token: this.jwtService.sign(refreshPayload, {
                 secret: jwtSecrets.refresh,
                 expiresIn: jwtExpiration.refresh
             }),

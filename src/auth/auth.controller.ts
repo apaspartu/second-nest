@@ -23,6 +23,13 @@ export class AuthController {
     @Post('refresh')
     @UseGuards(AuthGuard)
     async refresh(@Body() tokenDto: TokenDto, @Request() req) {
+        console.log(req.user)
         return await this.authService.refresh(tokenDto);
+    }
+
+    @Get('home')
+    @UseGuards(AuthGuard)
+    async home(@Request() req) {
+        return req.user;
     }
 }

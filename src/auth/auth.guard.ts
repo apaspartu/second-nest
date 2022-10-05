@@ -21,12 +21,19 @@ export class AuthGuard implements CanActivate {
     ): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         try {
-            const jwtString = String(request.headers['authorization']).split(' ')[1];
+            const authorizationHeader = String(request.headers['authorization']).split(' ');
+            if (authorizationHeader[0] !== 'Bearer') {
+                return false;
+            }
+            const jwtString = authorizationHeader[1];
             const jwt = this.jwtService.verify(jwtString, {secret: jwtSecrets.access});
 
             //request.user = await this.userDBService.getUser(jwt.email);
             request.user = {
                 email: jwt.email,
+                id: jwt.id,
+                name: jwt.name,
+                role: jwt.role
             }
 
         } catch (e) {
