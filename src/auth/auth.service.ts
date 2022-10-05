@@ -1,11 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import {jwtConstants} from "./constants";
 import * as cryptoJs from 'crypto-js';
 import { UserDbService } from "./user.db.service";
+import * as dotenv from 'dotenv';
+
+dotenv.config()
 
 function hash(raw) {
     return cryptoJs.SHA256(raw).toString()
+}
+
+const jwtSecrets = {
+    access: process.env.ACCESS_SECRET,
+    refresh: process.env.REFRESH_SECRET,
+}
+
+const jwtExpiration = {
+    access: process.env.ACCESS_TOKEN_EXPIRE_TIME,
+    refresh: process.env.REFRESH_TOKEN_EXPIRE_TIME
 }
 
 @Injectable()
@@ -21,19 +33,13 @@ export class AuthService {
         } catch (e) {
             return e.message;
         }
-
         // Generate JWT tokens
-        const payload = { email: profile.email };
-        const tokens = {
-            access_token: this.jwtService.sign(payload, {
-                secret: jwtConstants.accessSecret,
-                expiresIn: '1h'
-            }),
-            refresh_token: this.jwtService.sign(payload, {
-                secret: jwtConstants.refreshSecret,
-                expiresIn: '7d'
-            }),
-        };
+        const accessPayload = {
+            email: profile.email, id: profile.id,
+            name: profile.name, role: profile.role };
+        const refreshPayload = { email: profile.email };
+
+        const tokens = this.generateTokens(accessPayload, refreshPayload)
 
         // Set refresh token on User model in database
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
@@ -54,17 +60,13 @@ export class AuthService {
         }
 
         // Generate tokens
-        const payload = { email: profile.email };
-        const tokens = {
-            access_token: this.jwtService.sign(payload, {
-                secret: jwtConstants.accessSecret,
-                expiresIn: '1h'
-            }),
-            refresh_token: this.jwtService.sign(payload, {
-                secret: jwtConstants.refreshSecret,
-                expiresIn: '7d'
-            }),
-        };
+        const accessPayload = {
+            email: profile.email, id: profile.id,
+            name: profile.name, role: profile.role };
+        const refreshPayload = { email: profile.email };
+
+        const tokens = this.generateTokens(accessPayload, refreshPayload)
+
 
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
 
@@ -72,7 +74,7 @@ export class AuthService {
     }
     async refresh(dto) {
         // Check whether refresh token is valid
-        const jwt = await this.jwtService.verify(dto.token, {secret: jwtConstants.refreshSecret})
+        const jwt = await this.jwtService.verify(dto.token, {secret: jwtSecrets.refresh})
 
         // Get refresh token from db and check whether it is same as given
         const profile = await this.userDBService.getUser(jwt.email);
@@ -80,20 +82,15 @@ export class AuthService {
             return 'Access denied';
         }
 
-        const payload = {email: jwt.email};
+        const accessPayload = {
+            email: profile.email, id: profile.id,
+            name: profile.name, role: profile.role };
+        const refreshPayload = { email: profile.email };
 
-        const tokens = {
-            access_token: this.jwtService.sign(payload, {
-                secret: jwtConstants.accessSecret,
-                expiresIn: '1h'
-            }),
-            refresh_token: this.jwtService.sign(payload, {
-                secret: jwtConstants.refreshSecret,
-                expiresIn: '7d'
-            }),
-        };
+        const tokens = this.generateTokens(accessPayload, refreshPayload)
 
-        await this.userDBService.setRefresh(payload.email, tokens.refresh_token);
+
+        await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
 
         return tokens;
     }
@@ -118,6 +115,17 @@ export class AuthService {
         } else {
             throw new Error('Incorrect password');
         }
-
+    }
+    generateTokens(accessPayload, refreshPayload) {
+        return {
+            access_token: this.jwtService.sign(accessPayload, {
+                secret: jwtSecrets.access,
+                expiresIn: jwtExpiration.access
+            }),
+            refresh_token: this.jwtService.sign(refreshPayload, {
+                secret: jwtSecrets.refresh,
+                expiresIn: jwtExpiration.refresh
+            }),
+        };
     }
 }
