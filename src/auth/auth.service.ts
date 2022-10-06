@@ -1,20 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService } from './jwt.service';
 import * as cryptoJs from 'crypto-js';
 import { UserDbService } from '../user/user.db.service';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
-
-const jwtSecrets = {
-    access: process.env.ACCESS_SECRET,
-    refresh: process.env.REFRESH_SECRET,
-};
-
-const jwtExpiration = {
-    access: process.env.ACCESS_TOKEN_EXPIRE_TIME,
-    refresh: process.env.REFRESH_TOKEN_EXPIRE_TIME,
-};
+import { UserModel } from "../user/user.model";
 
 @Injectable()
 export class AuthService {
@@ -36,7 +24,7 @@ export class AuthService {
         };
         const refreshPayload = { email: profile.email };
 
-        const tokens = this.generateTokens(accessPayload, refreshPayload);
+        const tokens = this.jwtService.generateTokens(accessPayload, refreshPayload);
 
         // Set refresh token on User model in database
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
@@ -63,7 +51,7 @@ export class AuthService {
         };
         const refreshPayload = { email: profile.email };
 
-        const tokens = this.generateTokens(accessPayload, refreshPayload);
+        const tokens = this.jwtService.generateTokens(accessPayload, refreshPayload);
 
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
 
@@ -72,7 +60,7 @@ export class AuthService {
     async refresh(dto) {
     // Check whether refresh token is valid
         const jwt = await this.jwtService.verify(dto.token, {
-            secret: jwtSecrets.refresh,
+            secret: this.jwtService.jwtSecrets.refresh,
         });
 
         // Get refresh token from db and check whether it is same as given
@@ -89,7 +77,7 @@ export class AuthService {
         };
         const refreshPayload = { email: profile.email };
 
-        const tokens = this.generateTokens(accessPayload, refreshPayload);
+        const tokens = this.jwtService.generateTokens(accessPayload, refreshPayload);
 
         await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
 
@@ -97,7 +85,7 @@ export class AuthService {
     }
 
     // Check whether password matches email
-    async authenticateUser(email, password) {
+    async authenticateUser(email: string, password: string): Promise<UserModel> {
         const hashedPassword = this.hash(password);
 
         let profile;
@@ -108,18 +96,6 @@ export class AuthService {
         } else {
             throw new Error('Incorrect password');
         }
-    }
-    generateTokens(accessPayload, refreshPayload) {
-        return {
-            access_token: this.jwtService.sign(accessPayload, {
-                secret: jwtSecrets.access,
-                expiresIn: jwtExpiration.access,
-            }),
-            refresh_token: this.jwtService.sign(refreshPayload, {
-                secret: jwtSecrets.refresh,
-                expiresIn: jwtExpiration.refresh,
-            }),
-        };
     }
     hash(raw) {
         return cryptoJs.SHA256(raw, ).toString();
