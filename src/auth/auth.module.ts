@@ -6,12 +6,14 @@ import {SequelizeModule} from "@nestjs/sequelize";
 import {UserModel} from '../user/user.model';
 import { JwtModule } from "@nestjs/jwt";
 import { JwtService } from "./jwt.service";
+import {MailModule} from "../mail/mail.module";
+import {MailService} from "../mail/mail.service";
 
 
 @Module({
     imports: [SequelizeModule.forFeature([UserModel]),
-              JwtModule],
+              JwtModule, MailModule],
     controllers: [AuthController],
-    providers: [AuthService, UserDbService, JwtService],
+    providers: [AuthService, UserDbService, JwtService, MailService],
 })
 export class AuthModule {}

@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import {SequelizeOptions} from "sequelize-typescript";
+import {MailerModule, MailerService} from "@nestjs-modules/mailer";
 
 dotenv.config()
 
@@ -11,9 +12,11 @@ enum RequiredVariables {
 
     ACCESS_TOKEN_EXPIRE_TIME = 'ACCESS_TOKEN_EXPIRE_TIME',
     REFRESH_TOKEN_EXPIRE_TIME = 'REFRESH_TOKEN_EXPIRE_TIME',
+    EMAIL_TOKEN_EXPIRE_TIME = 'EMAIL_TOKEN_EXPIRE_TIME',
 
     REFRESH_SECRET = 'REFRESH_SECRET',
     ACCESS_SECRET = 'ACCESS_SECRET',
+    EMAIL_VERIFY_SECRET = 'EMAIL_VERIFY_SECRET'
 }
 
 class ConfigService<T extends RequiredVariables> {
@@ -37,14 +40,31 @@ class ConfigService<T extends RequiredVariables> {
     getJwtSecretsConfig() {
         return {
             access: process.env.ACCESS_SECRET,
-            refresh: process.env.REFRESH_SECRET
+            refresh: process.env.REFRESH_SECRET,
+            emailVerify: process.env.EMAIL_VERIFY_SECRET,
         }
     }
     getJwtExpirationConfig() {
         return {
             access: process.env.ACCESS_TOKEN_EXPIRE_TIME,
             refresh: process.env.REFRESH_TOKEN_EXPIRE_TIME,
+            emailVerify: process.env.EMAIL_TOKEN_EXPIRE_TIME,
         }
+    }
+    getNodemailerOptions() {
+        return {
+                host: 'smtp.gmail.com',
+                port: 587,
+                ignoreTLS: false,
+                secure: false,
+                auth: {
+                    user: 'spatiumfabri@gmail.com',
+                    pass: 'tlktqjkivdoruyaq',
+                },
+                tls: {
+                    rejectUnauthorized: false,
+                },
+            }
     }
 }
 

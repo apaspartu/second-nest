@@ -3,13 +3,11 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProfileDto  {
     @ApiProperty()
-    @IsNotEmpty()
-    name: string;
+    inviteToken: string;
 
     @ApiProperty()
-    @IsEmail()
     @IsNotEmpty()
-    email: string;
+    name: string;
 
     @ApiProperty()
     @IsNotEmpty()
