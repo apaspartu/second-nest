@@ -1,4 +1,4 @@
-import {Controller, Get, Post, Body, UseGuards, Req} from "@nestjs/common";
+import {Controller, Get, Post, Body, UseGuards, Req, UseFilters} from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LoginUserDto } from "./dto/loginUser.dto";
 import { CreateProfileDto } from "./dto/createProfile.dto";
@@ -7,6 +7,7 @@ import { AuthGuard } from "./auth.guard";
 import { MailService } from "../mail/mail.service";
 import {VerifyEmailDto} from "./dto/verifyEmail.dto";
 import {Request} from "express";
+import {VerifyEmailFilter} from "../exception.filters/verify.email.filter";
 
 
 @Controller('auth')
@@ -20,8 +21,9 @@ export class AuthController {
     }
 
     @Post('verify-email')
+    @UseFilters(VerifyEmailFilter)
     async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto, @Req() req: Request) {
-        const origin = req.protocol + '://' + req.hostname;
+        const origin = req.headers.origin;
         return this.authService.verifyEmail(verifyEmailDto, origin);
     }
 
@@ -31,7 +33,6 @@ export class AuthController {
     }
 
     @Post('refresh')
-    @UseGuards(AuthGuard)
     async refresh(@Body() tokenDto: TokenDto, @Req() req: Request) {
         console.log(req.user)
         return await this.authService.refresh(tokenDto);
@@ -40,7 +41,7 @@ export class AuthController {
     @Get('home')
     @UseGuards(AuthGuard)
     async home(@Req() req) {
-        this.mailService.sendMail('vladuslavvin@gmail.com', 'hello');
+        await this.mailService.sendMail('vladuslavvin@gmail.com', 'hello');
         return req.user;
     }
 }
