@@ -3,15 +3,21 @@ import { JwtService } from './jwt.service';
 import * as cryptoJs from 'crypto-js';
 import { UserDbService } from '../user/user.db.service';
 import { UserModel } from "../user/user.model";
+import {CreateProfileDto} from "./dto/createProfile.dto";
+import {TokenDto} from "./dto/token.dto";
+import {LoginUserDto} from "./dto/loginUser.dto";
+import {VerifyEmailDto} from "./dto/verifyEmail.dto";
+import {MailService} from "../mail/mail.service";
 
 @Injectable()
 export class AuthService {
     constructor(
     private readonly userDBService: UserDbService,
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
     ) {}
 
-    async signIn(dto) {
+    async signIn(dto: LoginUserDto) {
     // Get profile from database
         let profile;
         profile = await this.authenticateUser(dto.email, dto.password);
@@ -31,14 +37,18 @@ export class AuthService {
 
         return tokens;
     }
-    async signUp(dto) {
-        const hashedPassword = this.hash(dto.password);
+
+    async createUser(dto: CreateProfileDto) {
+        const {name, inviteToken, password } = dto;
+        const {email} = this.jwtService.verifyEmail(inviteToken);
+
+        const hashedPassword = this.hash(password);
 
         // Get profile from database
         let profile;
         profile = await this.userDBService.createUser(
-            dto.name,
-            dto.email.toLowerCase(),
+            name,
+            email,
             hashedPassword,
         );
 
@@ -57,12 +67,21 @@ export class AuthService {
 
         return tokens;
     }
-    async refresh(dto) {
-    // Check whether refresh token is valid
-        const jwt = await this.jwtService.verify(dto.token, {
-            secret: this.jwtService.jwtSecrets.refresh,
-        });
 
+    async verifyEmail(dto: VerifyEmailDto, origin) {
+        const payload = {email: dto.email};
+        const email = dto.email;
+        const jwt = this.jwtService.generateToken(payload,
+            {secret: this.jwtService.jwtSecrets.access,
+                    expiresIn: this.jwtService.jwtExpirations.emailVerify});
+
+        const url = origin + '/sign-up/' + jwt;
+        await this.mailService.sendMail(email, url)
+    }
+
+    async refresh(dto: TokenDto) {
+        // Check whether refresh token is valid
+        const jwt = this.jwtService.verifyRefresh(dto.token);
         // Get refresh token from db and check whether it is same as given
         const profile = await this.userDBService.getUser(jwt.email);
         if (profile.refreshToken !== dto.token) {
@@ -97,6 +116,7 @@ export class AuthService {
             throw new Error('Incorrect password');
         }
     }
+
     hash(raw) {
         return cryptoJs.SHA256(raw, ).toString();
     }
