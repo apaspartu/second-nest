@@ -3,7 +3,8 @@ import { Injectable } from "@nestjs/common";
 import configService from "../config/config.service";
 import {AccessTokenPayloadInterface} from "../interfaces/access.token.payload.interface";
 import {RefreshTokenPayloadInterface} from "../interfaces/refresh.token.payload.interface";
-import {EmailVerifyTokenPayloadInterface} from "../interfaces/email-verify.token.payload.interface";
+import {InviteTokenPayloadInterface} from "../interfaces/invite.token.payload.interface";
+import {AccRefTokens} from "../interfaces/ac.tokens.interface";
 
 @Injectable()
 export class JwtService extends jwtServ {
@@ -14,19 +15,22 @@ export class JwtService extends jwtServ {
     public jwtSecrets = configService.getJwtSecretsConfig();
     public jwtExpirations = configService.getJwtExpirationConfig();
 
-    generateTokens(accessPayload: AccessTokenPayloadInterface, refreshPayload: RefreshTokenPayloadInterface) {
+    generateTokens(accessPayload: AccessTokenPayloadInterface, refreshPayload: RefreshTokenPayloadInterface): AccRefTokens {
         return {
-            access_token: this.sign(accessPayload, {
+            accessToken: this.sign(accessPayload, {
                 secret: this.jwtSecrets.access,
                 expiresIn: this.jwtExpirations.access,
             }),
-            refresh_token: this.sign(refreshPayload, {
+            refreshToken: this.sign(refreshPayload, {
                 secret: this.jwtSecrets.refresh,
                 expiresIn: this.jwtExpirations.refresh,
             }),
         };
     }
-    generateToken(payload: any, options = {}) {
+    generateToken(payload: any, options = {
+        secret: this.jwtSecrets.access,
+        expiresIn: '1h'
+    }) {
         return this.sign(payload, options);
     }
     verifyRefresh(token: string): RefreshTokenPayloadInterface {
@@ -35,7 +39,7 @@ export class JwtService extends jwtServ {
     verifyAccess(token: string): AccessTokenPayloadInterface {
         return this.verify(token, {secret: this.jwtSecrets.access});
     }
-    verifyEmail(token: string): EmailVerifyTokenPayloadInterface {
-        return this.verify(token, {secret: this.jwtSecrets.emailVerify});
+    verifyToken(token: string): InviteTokenPayloadInterface {
+        return this.verify(token, {secret: this.jwtSecrets.access});
     }
 }

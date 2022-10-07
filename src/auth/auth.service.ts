@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {ForbiddenException, Injectable, NotFoundException} from '@nestjs/common';
 import { JwtService } from './jwt.service';
 import * as cryptoJs from 'crypto-js';
 import { UserDbService } from '../user/user.db.service';
@@ -7,20 +7,20 @@ import {CreateProfileDto} from "./dto/createProfile.dto";
 import {TokenDto} from "./dto/token.dto";
 import {LoginUserDto} from "./dto/loginUser.dto";
 import {VerifyEmailDto} from "./dto/verifyEmail.dto";
-import {MailService} from "../mail/mail.service";
+import TakenEmailException from "../exceptions/taken.email.exc";
+import {AccRefTokens} from "../interfaces/ac.tokens.interface";
+import IncorrectPasswordExc from "../exceptions/incorrect.password.exc";
 
 @Injectable()
 export class AuthService {
     constructor(
     private readonly userDBService: UserDbService,
     private readonly jwtService: JwtService,
-    private readonly mailService: MailService,
     ) {}
 
-    async signIn(dto: LoginUserDto) {
+    async signIn(dto: LoginUserDto): Promise<AccRefTokens> {
     // Get profile from database
-        let profile;
-        profile = await this.authenticateUser(dto.email, dto.password);
+        let profile = await this.authenticateUser(dto.email, dto.password);
         // Generate JWT tokens
         const accessPayload = {
             email: profile.email,
@@ -33,20 +33,19 @@ export class AuthService {
         const tokens = this.jwtService.generateTokens(accessPayload, refreshPayload);
 
         // Set refresh token on User model in database
-        await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
+        await this.userDBService.setRefresh(profile.email, tokens.refreshToken);
 
         return tokens;
     }
 
-    async createUser(dto: CreateProfileDto) {
+    async createUser(dto: CreateProfileDto): Promise<AccRefTokens> {
         const {name, inviteToken, password } = dto;
-        const {email} = this.jwtService.verifyEmail(inviteToken);
+        const {email} = this.jwtService.verifyToken(inviteToken);
 
         const hashedPassword = this.hash(password);
 
         // Get profile from database
-        let profile;
-        profile = await this.userDBService.createUser(
+        const profile  = await this.userDBService.createUser(
             name,
             email,
             hashedPassword,
@@ -63,29 +62,37 @@ export class AuthService {
 
         const tokens = this.jwtService.generateTokens(accessPayload, refreshPayload);
 
-        await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
+        await this.userDBService.setRefresh(profile.email, tokens.refreshToken);
 
         return tokens;
     }
 
-    async verifyEmail(dto: VerifyEmailDto, origin) {
-        const payload = {email: dto.email};
+    async verifyEmail(dto: VerifyEmailDto, origin): Promise<void> {
         const email = dto.email;
-        const jwt = this.jwtService.generateToken(payload,
-            {secret: this.jwtService.jwtSecrets.access,
-                    expiresIn: this.jwtService.jwtExpirations.emailVerify});
+
+        const profile = await this.userDBService.getUser(email);
+        if (profile) {
+            throw new TakenEmailException();
+        }
+
+        const payload = {email: email};
+        const jwt = this.jwtService.generateToken(payload);
 
         const url = origin + '/sign-up/' + jwt;
-        await this.mailService.sendMail(email, url)
+        console.log(url)
+        // await this.mailService.sendMail(email, url)
     }
 
-    async refresh(dto: TokenDto) {
+    async refresh(dto: TokenDto): Promise<AccRefTokens> {
         // Check whether refresh token is valid
         const jwt = this.jwtService.verifyRefresh(dto.token);
         // Get refresh token from db and check whether it is same as given
         const profile = await this.userDBService.getUser(jwt.email);
+        if (!profile) {
+            throw new NotFoundException()
+        }
         if (profile.refreshToken !== dto.token) {
-            return 'Access denied';
+            throw new ForbiddenException();
         }
 
         const accessPayload = {
@@ -98,7 +105,7 @@ export class AuthService {
 
         const tokens = this.jwtService.generateTokens(accessPayload, refreshPayload);
 
-        await this.userDBService.setRefresh(profile.email, tokens.refresh_token);
+        await this.userDBService.setRefresh(profile.email, tokens.refreshToken);
 
         return tokens;
     }
@@ -107,17 +114,16 @@ export class AuthService {
     async authenticateUser(email: string, password: string): Promise<UserModel> {
         const hashedPassword = this.hash(password);
 
-        let profile;
-        profile = await this.userDBService.getUser(email);
+        let profile = await this.userDBService.getUser(email);
 
-        if (profile.password === hashedPassword) {
+        if (profile && profile.password === hashedPassword) {
             return profile;
         } else {
-            throw new Error('Incorrect password');
+            throw new IncorrectPasswordExc();
         }
     }
 
-    hash(raw) {
-        return cryptoJs.SHA256(raw, ).toString();
+    hash(raw: string): string {
+        return cryptoJs.SHA256(raw).toString();
     }
 }

@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { Sequelize } from 'sequelize-typescript';
 import {InjectModel} from "@nestjs/sequelize";
 import {UserModel} from "./user.model";
+import TakenEmailException from "../exceptions/taken.email.exc";
+import SomethingWrongExc from "../exceptions/something.wrong.exc";
 
 @Injectable()
 export class UserDbService {
@@ -10,22 +12,22 @@ export class UserDbService {
     async createUser(name: string, email: string, password: string) {
         let profile = await this.userModel.findOne({where: {email: email}});
         if (profile) {
-            throw new Error('Email already taken');
+            throw new TakenEmailException();
         }
 
         profile = await this.userModel.create({name, email, password});
         if (profile) {
             return profile;
         } else {
-            throw new Error('Something went wrong')
+            throw new SomethingWrongExc();
         }
     }
-    async getUser(email: string) {
+    async getUser(email: string): Promise<UserModel | false> {
         const profile = await this.userModel.findOne({where: {email: email}});
         if (profile) {
             return profile;
         } else {
-            throw new Error('Not found')
+            return false;
         }
     }
     async deleteUser(email: string) {
@@ -33,7 +35,7 @@ export class UserDbService {
         if (count === 1) {
             return true;
         } else {
-            throw new Error('Something went wrong')
+            throw new SomethingWrongExc()
         }
     }
     async changeRole(email: string, newRole: string) {
@@ -44,7 +46,7 @@ export class UserDbService {
         if (result[0] === 1) {
             return true;
         } else {
-            throw new Error('Something went wrong');
+            throw new SomethingWrongExc();
         }
     }
     async setRefresh(email: string, newToken) {
@@ -55,7 +57,7 @@ export class UserDbService {
         if (result[0] === 1) {
             return true;
         } else {
-            throw new Error('Something went wrong');
+            throw new SomethingWrongExc();
         }
     }
 }
