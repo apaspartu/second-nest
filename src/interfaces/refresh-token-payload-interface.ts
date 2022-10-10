@@ -1,3 +1,3 @@
 export interface RefreshTokenPayloadInterface {
-    email: string,
+    sessionId: string;
 }

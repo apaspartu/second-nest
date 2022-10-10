@@ -6,8 +6,9 @@ import {
     AllowNull,
     PrimaryKey,
     DataType,
-    Default
+    Default,
 } from 'sequelize-typescript';
+import { Transform } from 'class-transformer';
 
 @Table({
     tableName: 'Users',
@@ -16,8 +17,7 @@ export class UserModel extends Model<UserModel> {
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column(DataType.UUID)
-    id:string;
-
+    id: string;
 
     @AllowNull(false)
     @Column
@@ -35,6 +35,7 @@ export class UserModel extends Model<UserModel> {
     @Column
     role: string;
 
+    @Unique
     @Column
-    refreshToken: string;
+    sessionId: string;
 }
