@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import { SequelizeOptions } from 'sequelize-typescript';
+import { SheduleConfigInterface } from '../interfaces';
 
 dotenv.config();
 
@@ -16,6 +17,12 @@ enum RequiredVariables {
 
     REFRESH_SECRET = 'REFRESH_SECRET',
     ACCESS_SECRET = 'ACCESS_SECRET',
+
+    SCHEDULE_STEP = 'SCHEDULE_STEP',
+    WORKING_DAYS = 'WORKING_DAYS',
+
+    START_WORK_HOUR = 'START_WORK_HOUR',
+    END_WORK_HOUR = 'END_WORK_HOUR',
 }
 
 class ConfigService<T extends RequiredVariables> {
@@ -64,6 +71,14 @@ class ConfigService<T extends RequiredVariables> {
             tls: {
                 rejectUnauthorized: false,
             },
+        };
+    }
+    getScheduleConfig(): SheduleConfigInterface {
+        return {
+            step: parseInt(process.env.SCHEDULE_STEP),
+            startHour: parseInt(process.env.START_WORK_HOUR),
+            endHour: parseInt(process.env.END_WORK_HOUR),
+            workingDays: process.env.WORKING_DAYS.split(','),
         };
     }
 }

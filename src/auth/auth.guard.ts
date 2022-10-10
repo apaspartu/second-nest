@@ -5,7 +5,7 @@ import {
     ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from './jwt.service';
-import { UserModel } from '../user/user.model';
+import { UserModel } from '../models/user.model';
 import { AccessTokenPayloadInterface } from '../interfaces';
 import { UserDbService } from '../user/user.db.service';
 
