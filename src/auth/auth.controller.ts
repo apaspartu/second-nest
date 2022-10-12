@@ -6,6 +6,7 @@ import {
     UseGuards,
     Req,
     Res,
+    ForbiddenException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/loginUser.dto';
@@ -32,6 +33,12 @@ export class AuthController {
         @Body() verifyEmailDto: VerifyEmailDto,
         @Req() req: Request
     ) {
+        if (!verifyEmailDto.email.endsWith('@fivesysdev.com')) {
+            throw new ForbiddenException(
+                'Allowed only for @fivesysdev.com email adresses!'
+            );
+        }
+
         const origin = req.headers.origin;
         return this.authService.verifyEmail(verifyEmailDto, origin);
     }

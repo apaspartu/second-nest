@@ -1,7 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    ForbiddenException,
+    Injectable,
+    NotAcceptableException,
+} from '@nestjs/common';
 import configService from '../config/config.service';
 import { SheduleConfigInterface } from '../interfaces';
 import * as dayjs from 'dayjs';
+import { CreateEventDto } from './dto/create-event.dto';
+import { ReserveItemsDto } from './dto/reserve-items.dto';
+import { EventService } from '../event/event.service';
+import { ItemService } from '../item/item.service';
+import * as crypto from 'crypto';
 
 const DAYS = [
     'sunday',
@@ -17,8 +27,52 @@ const DAYS = [
 export class ScheduleService {
     private readonly configuration: SheduleConfigInterface;
 
-    constructor() {
+    constructor(
+        private readonly eventService: EventService,
+        private readonly itemService: ItemService
+    ) {
         this.configuration = configService.getScheduleConfig();
+    }
+
+    async createEvent(dto: CreateEventDto, req) {
+        // check whether eventId is valid and if its owner is userId
+        // fill empty fields of event and set its items to occupied state
+        return req.user;
+    }
+
+    async reserveItems(dto: ReserveItemsDto, req) {
+        // Check whether item isd are valid
+        const { firstItemId, lastItemId } = dto;
+
+        if (
+            !this.validateItemId(firstItemId) ||
+            !this.validateItemId(lastItemId)
+        ) {
+            throw new BadRequestException("Invalid item's id");
+        }
+
+        // Generate item ids from firstItemId to lastItemId including
+        const itemIds = this.generateItemIdsBetween(firstItemId, lastItemId);
+
+        // check whether items are free
+        for (const itemId of itemIds) {
+            const item = await this.itemService.getItem(itemId);
+            if (item) {
+                throw new ForbiddenException(
+                    'Selected items are already taken'
+                );
+            }
+        }
+
+        // create empty event for userId
+        const event = await this.eventService.createEmptyEvent(req.user.id);
+
+        // create items for this empty event
+        for (const itemId of itemIds) {
+            await this.itemService.createItem(itemId, event.id);
+        }
+
+        return event.id;
     }
 
     async generate(year, month) {
@@ -26,6 +80,8 @@ export class ScheduleService {
         const daysInMonth = currentMonth.daysInMonth();
 
         const schedule = {
+            year: year,
+            month: month,
             startHour: this.configuration.startHour,
             endHour: this.configuration.endHour,
             step: this.configuration.step,
@@ -69,5 +125,26 @@ export class ScheduleService {
     isWorkingDay(day: string) {
         day = day.toLowerCase();
         return this.configuration.workingDays.includes(day);
+    }
+
+    validateItemId(itemId) {
+        return dayjs(itemId, 'YYYY-MM-DD/HH:mm', true).isValid();
+    }
+
+    generateItemIdsBetween(firstItemId: string, lastItemId: string): string[] {
+        const start = dayjs(firstItemId, 'YYYY-MM-DD/HH:mm', true);
+        const end = dayjs(lastItemId, 'YYYY-MM-DD/HH:mm', true);
+        const step = this.configuration.step;
+
+        let items = [];
+        for (
+            let i = start;
+            i.valueOf() <= end.valueOf();
+            i = i.add(step, 'minute')
+        ) {
+            items.push(i.format('YYYY-MM-DD/HH:mm'));
+        }
+
+        return items;
     }
 }

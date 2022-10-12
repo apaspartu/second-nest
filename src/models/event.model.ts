@@ -1,6 +1,5 @@
 import {
     Column,
-    Unique,
     Model,
     Table,
     AllowNull,
@@ -10,32 +9,35 @@ import {
 } from 'sequelize-typescript';
 
 @Table({
-    tableName: 'Users',
+    tableName: 'Events',
 })
-export class UserModel extends Model<UserModel> {
+export class EventModel extends Model {
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column(DataType.UUID)
     id: string;
 
     @AllowNull(false)
-    @Column
-    name: string;
+    @Column(DataType.UUID)
+    userId: string;
 
+    @Default(false)
     @AllowNull(false)
-    @Unique
+    @Column
+    isCompleted: boolean;
+
+    @Column
+    title: string;
+
+    @Column
+    author: string;
+
     @Column
     email: string;
 
-    @AllowNull(false)
-    @Column
-    password: string;
+    @Column(DataType.TEXT)
+    description: string;
 
-    @Default('user')
     @Column
-    role: string;
-
-    @Unique
-    @Column
-    sessionId: string;
+    color: string;
 }
