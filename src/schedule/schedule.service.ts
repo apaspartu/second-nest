@@ -5,10 +5,10 @@ import {
     NotAcceptableException,
 } from '@nestjs/common';
 import configService from '../config/config.service';
-import { SheduleConfigInterface } from '../interfaces';
+import { SheduleConfigInterface, UserInterface } from '../interfaces';
 import * as dayjs from 'dayjs';
 import { CreateEventDto } from './dto/create-event.dto';
-import { ReserveItemsDto } from './dto/reserve-items.dto';
+import { ReserveItemDto } from './dto/reserve-item.dto';
 import { EventService } from '../event/event.service';
 import { ItemService } from '../item/item.service';
 import * as crypto from 'crypto';
@@ -40,37 +40,15 @@ export class ScheduleService {
         return req.user;
     }
 
-    async reserveItems(dto: ReserveItemsDto, req) {
-        // Check whether item isd are valid
-        const { firstItemId, lastItemId } = dto;
-
-        if (
-            !this.validateItemId(firstItemId) ||
-            !this.validateItemId(lastItemId)
-        ) {
-            throw new BadRequestException("Invalid item's id");
-        }
-
-        // Generate item ids from firstItemId to lastItemId including
-        const itemIds = this.generateItemIdsBetween(firstItemId, lastItemId);
-
-        // check whether items are free
-        for (const itemId of itemIds) {
-            const item = await this.itemService.getItem(itemId);
-            if (item) {
-                throw new ForbiddenException(
-                    'Selected items are already taken'
-                );
-            }
+    async reserveItem(itemId: string, user: UserInterface) {
+        // check whether item is free
+        const item = await this.itemService.getItem(itemId);
+        if (item) {
+            throw new ForbiddenException('Selected item is already taken');
         }
 
         // create empty event for userId
-        const event = await this.eventService.createEmptyEvent(req.user.id);
-
-        // create items for this empty event
-        for (const itemId of itemIds) {
-            await this.itemService.createItem(itemId, event.id);
-        }
+        const event = await this.eventService.createEmptyEvent(user.id);
 
         return event.id;
     }

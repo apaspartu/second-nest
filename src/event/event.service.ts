@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { EventModel } from '../models/event.model';
+import { EventModel } from '../models';
 import { InjectModel } from '@nestjs/sequelize';
+import { EventInfoInterface } from '../interfaces';
 
 @Injectable()
 export class EventService {
@@ -8,40 +9,37 @@ export class EventService {
         @InjectModel(EventModel) private eventModel: typeof EventModel
     ) {}
 
-    async createEmptyEvent(userId: string) {
-        return await this.eventModel.create({
+    async createEmptyEvent(userId: string): Promise<EventModel> {
+        return this.eventModel.create({
             userId,
         });
     }
 
-    async getEvent(id: string) {
-        return await this.eventModel.findOne({ where: { id: id } });
+    async getEvent(id: string): Promise<EventModel> {
+        return this.eventModel.findOne({ where: { id: id } });
     }
 
-    async deleteEvent(id: string) {
-        return await this.eventModel.destroy({ where: { id: id } });
+    async deleteEvent(id: string): Promise<boolean> {
+        return (await this.eventModel.destroy({ where: { id: id } })) === 1;
     }
 
     async fillEmptyFields(
         id: string,
-        title: string,
-        author: string,
-        email: string,
-        description: string,
-        color: string
-    ) {
-        return await this.eventModel.update(
-            { title, author, email, description, color },
-            {
+        eventInfo: EventInfoInterface
+    ): Promise<boolean> {
+        return (
+            (await this.eventModel.update(eventInfo, {
                 where: { id: id },
-            }
+            })[0]) === 1
         );
     }
 
-    async setEventCompleted(id) {
-        return await this.eventModel.update(
-            { isCompleted: true },
-            { where: { id: id } }
+    async setEventCompleted(id: string): Promise<boolean> {
+        return (
+            (await this.eventModel.update(
+                { isCompleted: true },
+                { where: { id: id } }
+            )[0]) === 1
         );
     }
 }
