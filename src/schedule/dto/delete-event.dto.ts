@@ -1,12 +1,8 @@
 import { IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ReserveItemsDto {
+export class DeleteEventDto {
     @ApiProperty()
     @IsNotEmpty()
-    firstItemId: string;
-
-    @ApiProperty()
-    @IsNotEmpty()
-    lastItemId: string;
+    eventId: string;
 }

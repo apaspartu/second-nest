@@ -5,16 +5,16 @@ module.exports = {
     async up(queryInterface, Sequelize) {
         return await queryInterface.sequelize.query(
             `CREATE TABLE public."Events" (
-                \tid uuid NOT NULL,
-                \t"userId" uuid NOT NULL,
-                \tauthor varchar(255) NULL,
-                \temail varchar(255) NULL,
-                \tdescription text NULL,
-                \tcolor varchar(255) NULL,
-                \t"createdAt" timestamptz NOT NULL,
-                \t"updatedAt" timestamptz NOT NULL,
-                \ttitle varchar(255) NULL,
-                \t"isCompleted" bool NOT NULL DEFAULT false,
+                id uuid NOT NULL,
+                "userId" uuid NOT NULL,
+                author varchar(255) NULL,
+                email varchar(255) NULL,
+                description text NULL,
+                color varchar(255) NULL,
+                "createdAt" timestamptz NOT NULL,
+                "updatedAt" timestamptz NOT NULL,
+                title varchar(255) NULL,
+                "isCompleted" bool NOT NULL DEFAULT false,
                 \tCONSTRAINT "Events_pkey" PRIMARY KEY (id)
                 );`
         );

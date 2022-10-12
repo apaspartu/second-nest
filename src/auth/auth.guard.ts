@@ -5,9 +5,9 @@ import {
     ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from './jwt.service';
-import { UserModel } from '../models/user.model';
-import { AccessTokenPayloadInterface } from '../interfaces';
+import { UserModel } from '../models';
 import { UserDbService } from '../user/user.db.service';
+import { UserInterface } from '../interfaces';
 
 // This guard will reject if user is not authorized, that is access token verification fails
 
@@ -34,7 +34,7 @@ export class AuthGuard implements CanActivate {
                 return false;
             }
 
-            const user: AccessTokenPayloadInterface = {
+            const user: UserInterface = {
                 email: jwt.email,
                 name: jwt.name,
                 role: jwt.role,

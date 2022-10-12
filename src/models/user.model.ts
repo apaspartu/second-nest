@@ -9,6 +9,10 @@ import {
     Default,
 } from 'sequelize-typescript';
 
+enum defaultValues {
+    user = 'user',
+}
+
 @Table({
     tableName: 'Users',
 })
@@ -31,7 +35,7 @@ export class UserModel extends Model<UserModel> {
     @Column
     password: string;
 
-    @Default('user')
+    @Default(defaultValues.user)
     @Column
     role: string;
 
