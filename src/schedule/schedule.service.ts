@@ -17,6 +17,7 @@ import { EventService } from '../event/event.service';
 import { ItemService } from '../item/item.service';
 import * as crypto from 'crypto';
 import { emitKeypressEvents } from 'readline';
+import { WsException } from '@nestjs/websockets';
 
 const DAYS = [
     'sunday',
@@ -39,14 +40,18 @@ export class ScheduleService {
         this.configuration = configService.getScheduleConfig();
     }
 
-    async createEvent(dto: CreateEventDto, user: UserInterface) {
+    async createEvent(
+        dto: CreateEventDto,
+        user: UserInterface,
+        options = { mode: 'HTTP' }
+    ) {
         let event = await this.eventService.getIncompleteEvent(user.id);
         if (!event) {
-            throw new BadRequestException('Any item was not reserved');
-        }
-
-        if (event.isCompleted) {
-            throw new ForbiddenException('Event was already created');
+            if (options.mode === 'HTTP') {
+                throw new BadRequestException('Any item was not reserved');
+            } else if (options.mode === 'WS') {
+                throw new WsException('Any item was not reserved');
+            }
         }
 
         const eventInfo: EventInfoInterface = {
@@ -60,22 +65,30 @@ export class ScheduleService {
         return eventInfo;
     }
 
-    async reserveItem(itemId: string, user: UserInterface) {
-        let item;
+    async reserveItem(
+        itemId: string,
+        user: UserInterface,
+        options = { mode: 'HTTP' }
+    ) {
+        let item = await this.itemService.getItem(itemId);
 
         let event = await this.eventService.getIncompleteEvent(user.id);
         if (!event) {
             // if event DOES NOT EXIST
-            item = await this.itemService.getItem(itemId);
             if (item) {
-                throw new ForbiddenException('Selected item is already taken');
+                if (options.mode === 'HTTP') {
+                    throw new ForbiddenException(
+                        'Selected item is already taken'
+                    );
+                } else if (options.mode === 'WS') {
+                    throw new WsException('Selected item is already taken');
+                }
             }
 
             event = await this.eventService.createEmptyEvent(user.id);
             item = await this.itemService.createItem(itemId, event.id);
         } else {
             // if event EXISTS
-            item = await this.itemService.getItem(itemId);
             if (item && item.eventId === event.id) {
                 // toggle item to false (delete it)
                 // if it is last item of event, delete event and item will be deleted automatically
@@ -87,7 +100,13 @@ export class ScheduleService {
                     await this.itemService.deleteItem(itemId);
                 }
             } else if (item && item.eventId !== event.id) {
-                throw new ForbiddenException('You do not own selected item');
+                if (options.mode === 'HTTP') {
+                    throw new ForbiddenException(
+                        'You do not own selected item'
+                    );
+                } else if (options.mode === 'WS') {
+                    throw new WsException('You do not own selected item');
+                }
             } else {
                 // toggle item to true (create it)
                 item = await this.itemService.createItem(itemId, event.id);
@@ -97,10 +116,18 @@ export class ScheduleService {
         return item;
     }
 
-    async deleteEvent(eventId: string, user: UserInterface) {
+    async deleteEvent(
+        eventId: string,
+        user: UserInterface,
+        options = { mode: 'HTTP' }
+    ) {
         const event = await this.eventService.getEvent(eventId);
         if (!event) {
-            throw new BadRequestException('Event does not exist');
+            if (options.mode === 'HTTP') {
+                throw new BadRequestException('Event does not exist');
+            } else if (options.mode === 'WS') {
+                throw new WsException('Event does not exist');
+            }
         }
 
         if (user.role === 'admin') {
@@ -109,7 +136,11 @@ export class ScheduleService {
             if (event.userId === user.id) {
                 return await this.eventService.deleteEvent(eventId);
             } else {
-                throw new ForbiddenException('You do not own this event');
+                if (options.mode === 'HTTP') {
+                    throw new ForbiddenException('You do not own this event');
+                } else if (options.mode === 'WS') {
+                    throw new WsException('You do not own this event');
+                }
             }
         }
     }

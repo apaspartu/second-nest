@@ -12,7 +12,7 @@ import { UserInterface } from '../interfaces';
 // This guard will reject if user is not authorized, that is access token verification fails
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthHTTPGuard implements CanActivate {
     userDBService: UserDbService;
     constructor(private jwtService: JwtService) {
         this.userDBService = new UserDbService(UserModel);

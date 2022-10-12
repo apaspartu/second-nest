@@ -11,7 +11,7 @@ import {
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/loginUser.dto';
 import { CreateProfileDto } from './dto/createProfile.dto';
-import { AuthGuard } from './auth.guard';
+import { AuthHTTPGuard } from './authHTTP.guard';
 import { VerifyEmailDto } from './dto/verifyEmail.dto';
 import { Request, Response } from 'express';
 import { ResetPasswordDto } from './dto/resetPasswordDto';
@@ -70,7 +70,7 @@ export class AuthController {
     }
 
     @Post('logout')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthHTTPGuard)
     async logout(
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response
@@ -79,7 +79,7 @@ export class AuthController {
     }
 
     @Get('home')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthHTTPGuard)
     async home(@Req() req) {
         return req.user;
     }

@@ -28,7 +28,6 @@ export class ItemService {
     }
 
     async getEventItemsCount(eventId) {
-        return (await this.itemModel.findAll({ where: { eventId: eventId } }))
-            .length;
+        return await this.itemModel.count({ where: { eventId: eventId } });
     }
 }

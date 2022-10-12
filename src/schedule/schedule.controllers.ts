@@ -11,9 +11,8 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ScheduleService } from './schedule.service';
-import { AuthGuard } from '../auth/auth.guard';
+import { AuthHTTPGuard } from '../auth/authHTTP.guard';
 import { EventService } from '../event/event.service';
-import * as crypto from 'crypto';
 import { ItemService } from '../item/item.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { ReserveItemDto } from './dto/reserve-item.dto';
@@ -28,7 +27,7 @@ export class ScheduleController {
     ) {}
 
     @Get()
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthHTTPGuard)
     async get(
         @Query('year', ParseIntPipe) year,
         @Query('month', ParseIntPipe) month
@@ -37,19 +36,19 @@ export class ScheduleController {
     }
 
     @Post('create-event')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthHTTPGuard)
     async createEvent(@Body() createEventDto: CreateEventDto, @Req() req) {
         return this.scheduleService.createEvent(createEventDto, req.user);
     }
 
     @Post('reserve-item')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthHTTPGuard)
     async reserveItem(@Body() dto: ReserveItemDto, @Req() req) {
         return await this.scheduleService.reserveItem(dto.itemId, req.user);
     }
 
     @Delete('delete-event')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthHTTPGuard)
     async deleteEvent(@Body() deleteEventDto: DeleteEventDto, @Req() req) {
         return await this.scheduleService.deleteEvent(
             deleteEventDto.eventId,
