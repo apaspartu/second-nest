@@ -5,13 +5,18 @@ import {
     NotAcceptableException,
 } from '@nestjs/common';
 import configService from '../config/config.service';
-import { SheduleConfigInterface, UserInterface } from '../interfaces';
+import {
+    EventInfoInterface,
+    SheduleConfigInterface,
+    UserInterface,
+} from '../interfaces';
 import * as dayjs from 'dayjs';
 import { CreateEventDto } from './dto/create-event.dto';
 import { ReserveItemDto } from './dto/reserve-item.dto';
 import { EventService } from '../event/event.service';
 import { ItemService } from '../item/item.service';
 import * as crypto from 'crypto';
+import { emitKeypressEvents } from 'readline';
 
 const DAYS = [
     'sunday',
@@ -34,23 +39,79 @@ export class ScheduleService {
         this.configuration = configService.getScheduleConfig();
     }
 
-    async createEvent(dto: CreateEventDto, req) {
-        // check whether eventId is valid and if its owner is userId
-        // fill empty fields of event and set its items to occupied state
-        return req.user;
+    async createEvent(dto: CreateEventDto, user: UserInterface) {
+        let event = await this.eventService.getIncompleteEvent(user.id);
+        if (!event) {
+            throw new BadRequestException('Any item was not reserved');
+        }
+
+        if (event.isCompleted) {
+            throw new ForbiddenException('Event was already created');
+        }
+
+        const eventInfo: EventInfoInterface = {
+            ...dto,
+            author: user.name,
+            email: user.email,
+        };
+        await this.eventService.fillEmptyFields(event.id, eventInfo);
+        await this.eventService.setEventCompleted(event.id);
+
+        return eventInfo;
     }
 
     async reserveItem(itemId: string, user: UserInterface) {
-        // check whether item is free
-        const item = await this.itemService.getItem(itemId);
-        if (item) {
-            throw new ForbiddenException('Selected item is already taken');
+        let item;
+
+        let event = await this.eventService.getIncompleteEvent(user.id);
+        if (!event) {
+            // if event DOES NOT EXIST
+            item = await this.itemService.getItem(itemId);
+            if (item) {
+                throw new ForbiddenException('Selected item is already taken');
+            }
+
+            event = await this.eventService.createEmptyEvent(user.id);
+            item = await this.itemService.createItem(itemId, event.id);
+        } else {
+            // if event EXISTS
+            item = await this.itemService.getItem(itemId);
+            if (item && item.eventId === event.id) {
+                // toggle item to false (delete it)
+                // if it is last item of event, delete event and item will be deleted automatically
+                if (
+                    (await this.itemService.getEventItemsCount(event.id)) === 1
+                ) {
+                    await this.eventService.deleteEvent(event.id);
+                } else {
+                    await this.itemService.deleteItem(itemId);
+                }
+            } else if (item && item.eventId !== event.id) {
+                throw new ForbiddenException('You do not own selected item');
+            } else {
+                // toggle item to true (create it)
+                item = await this.itemService.createItem(itemId, event.id);
+            }
         }
 
-        // create empty event for userId
-        const event = await this.eventService.createEmptyEvent(user.id);
+        return item;
+    }
 
-        return event.id;
+    async deleteEvent(eventId: string, user: UserInterface) {
+        const event = await this.eventService.getEvent(eventId);
+        if (!event) {
+            throw new BadRequestException('Event does not exist');
+        }
+
+        if (user.role === 'admin') {
+            return await this.eventService.deleteEvent(eventId);
+        } else {
+            if (event.userId === user.id) {
+                return await this.eventService.deleteEvent(eventId);
+            } else {
+                throw new ForbiddenException('You do not own this event');
+            }
+        }
     }
 
     async generate(year, month) {
