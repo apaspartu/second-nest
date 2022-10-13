@@ -17,7 +17,10 @@ import { ItemService } from '../item/item.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { ReserveItemDto } from './dto/reserve-item.dto';
 import { DeleteEventDto } from './dto/delete-event.dto';
+import { ApiTags } from '@nestjs/swagger';
+import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
 
+@ApiTags('schedule')
 @Controller('schedule')
 export class ScheduleController {
     constructor(
@@ -26,33 +29,19 @@ export class ScheduleController {
         private readonly itemService: ItemService
     ) {}
 
+    @ApiImplicitQuery({ name: 'year' })
+    @ApiImplicitQuery({ name: 'month' })
     @Get()
-    @UseGuards(AuthHTTPGuard)
     async get(
         @Query('year', ParseIntPipe) year,
         @Query('month', ParseIntPipe) month
     ) {
-        return this.scheduleService.generate(year, month);
-    }
+        const template = await this.scheduleService.generate(year, month);
+        const events = await this.eventService.getAllCompleteEvents();
 
-    @Post('create-event')
-    @UseGuards(AuthHTTPGuard)
-    async createEvent(@Body() createEventDto: CreateEventDto, @Req() req) {
-        return this.scheduleService.createEvent(createEventDto, req.user);
-    }
-
-    @Post('reserve-item')
-    @UseGuards(AuthHTTPGuard)
-    async reserveItem(@Body() dto: ReserveItemDto, @Req() req) {
-        return await this.scheduleService.reserveItem(dto.itemId, req.user);
-    }
-
-    @Delete('delete-event')
-    @UseGuards(AuthHTTPGuard)
-    async deleteEvent(@Body() deleteEventDto: DeleteEventDto, @Req() req) {
-        return await this.scheduleService.deleteEvent(
-            deleteEventDto.eventId,
-            req.user
-        );
+        return {
+            template,
+            events,
+        };
     }
 }

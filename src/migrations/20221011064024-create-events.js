@@ -4,7 +4,7 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         return await queryInterface.sequelize.query(
-            `CREATE TABLE public."Events" (
+            `CREATE TABLE IF NOT EXISTS public."Events" (
                 id uuid NOT NULL,
                 "userId" uuid NOT NULL,
                 author varchar(255) NULL,
@@ -15,8 +15,8 @@ module.exports = {
                 "updatedAt" timestamptz NOT NULL,
                 title varchar(255) NULL,
                 "isCompleted" bool NOT NULL DEFAULT false,
-                \tCONSTRAINT "Events_pkey" PRIMARY KEY (id)
-                );`
+                CONSTRAINT "Events_pkey" PRIMARY KEY (id)
+);`
         );
     },
 

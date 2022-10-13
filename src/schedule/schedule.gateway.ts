@@ -5,19 +5,23 @@ import {
     WebSocketGateway,
     WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'net';
+import { Server, Socket } from 'socket.io';
 import { ScheduleService } from './schedule.service';
 import { UseGuards } from '@nestjs/common';
 import { ReserveItemDto } from './dto/reserve-item.dto';
 import { AuthWSGuard } from '../auth/authWS.guard';
 import { CreateEventDto } from './dto/create-event.dto';
 import { DeleteEventDto } from './dto/delete-event.dto';
+import { EventService } from '../event/event.service';
 
 @WebSocketGateway({ transports: ['websocket'] })
 export class ScheduleGateway {
     @WebSocketServer() server: Server;
 
-    constructor(private readonly scheduleService: ScheduleService) {}
+    constructor(
+        private readonly scheduleService: ScheduleService,
+        private readonly eventService: EventService
+    ) {}
 
     @UseGuards(AuthWSGuard)
     @SubscribeMessage('reserve-item')
@@ -25,11 +29,11 @@ export class ScheduleGateway {
         @MessageBody() data: ReserveItemDto,
         @ConnectedSocket() client
     ) {
-        return await this.scheduleService.reserveItem(
+        const item = await this.scheduleService.reserveItem(
             data.itemId,
-            client.user,
-            { mode: 'WS' }
+            client.user
         );
+        this.server.emit('reserve-item', item);
     }
 
     @UseGuards(AuthWSGuard)
@@ -38,9 +42,8 @@ export class ScheduleGateway {
         @MessageBody() data: CreateEventDto,
         @ConnectedSocket() client
     ) {
-        return await this.scheduleService.createEvent(data, client.user, {
-            mode: 'WS',
-        });
+        const event = await this.scheduleService.createEvent(data, client.user);
+        this.server.emit('create-event', event);
     }
 
     @UseGuards(AuthWSGuard)
@@ -49,12 +52,15 @@ export class ScheduleGateway {
         @MessageBody() data: DeleteEventDto,
         @ConnectedSocket() client
     ) {
-        return await this.scheduleService.deleteEvent(
-            data.eventId,
-            client.user,
-            {
-                mode: 'WS',
-            }
-        );
+        await this.scheduleService.deleteEvent(data.eventId, client.user);
+        this.server.emit('delete-event', data.eventId);
+    }
+
+    @UseGuards(AuthWSGuard)
+    @SubscribeMessage('get-events')
+    async getEvents(@MessageBody() data, @ConnectedSocket() client: Socket) {
+        return this.eventService.getAllCompleteEvents({
+            withItems: true,
+        });
     }
 }

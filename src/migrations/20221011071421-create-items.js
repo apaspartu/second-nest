@@ -4,7 +4,7 @@
 module.exports = {
     async up(queryInterface, Sequelize) {
         return await queryInterface.sequelize.query(
-            `CREATE TABLE public."Items" (
+            `CREATE TABLE IF NOT EXISTS public."Items" (
                 id varchar(255) NOT NULL,
                 "eventId" uuid NOT NULL,
                 "createdAt" timestamptz NOT NULL,

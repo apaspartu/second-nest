@@ -1,12 +1,12 @@
-import { JwtService as jwtServ } from "@nestjs/jwt";
-import { Injectable } from "@nestjs/common";
-import configService from "../config/config.service";
+import { JwtService as jwtServ } from '@nestjs/jwt';
+import { Injectable } from '@nestjs/common';
+import configService from '../config/config.service';
 import {
     AccessTokenPayloadInterface,
     RefreshTokenPayloadInterface,
     AccRefTokens,
     InviteTokenPayloadInterface,
-} from "../interfaces";
+} from '../interfaces';
 
 @Injectable()
 export class JwtService extends jwtServ {
@@ -36,7 +36,7 @@ export class JwtService extends jwtServ {
         payload,
         options = {
             secret: this.jwtSecrets.access,
-            expiresIn: "1h",
+            expiresIn: '1h',
         }
     ) {
         return this.sign(payload, options);
