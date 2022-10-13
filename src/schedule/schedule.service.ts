@@ -17,6 +17,7 @@ import { EventService } from '../event/event.service';
 import { ItemService } from '../item/item.service';
 import * as crypto from 'crypto';
 import { emitKeypressEvents } from 'readline';
+import { WsException } from '@nestjs/websockets';
 
 const DAYS = [
     'sunday',
@@ -42,11 +43,7 @@ export class ScheduleService {
     async createEvent(dto: CreateEventDto, user: UserInterface) {
         let event = await this.eventService.getIncompleteEvent(user.id);
         if (!event) {
-            throw new BadRequestException('Any item was not reserved');
-        }
-
-        if (event.isCompleted) {
-            throw new ForbiddenException('Event was already created');
+            throw new WsException('Any item was not reserved');
         }
 
         const eventInfo: EventInfoInterface = {
@@ -57,25 +54,23 @@ export class ScheduleService {
         await this.eventService.fillEmptyFields(event.id, eventInfo);
         await this.eventService.setEventCompleted(event.id);
 
-        return eventInfo;
+        await event.reload();
+        return event;
     }
 
     async reserveItem(itemId: string, user: UserInterface) {
-        let item;
-
+        let item = await this.itemService.getItem(itemId);
         let event = await this.eventService.getIncompleteEvent(user.id);
         if (!event) {
             // if event DOES NOT EXIST
-            item = await this.itemService.getItem(itemId);
             if (item) {
-                throw new ForbiddenException('Selected item is already taken');
+                throw new WsException('Selected item is already taken');
             }
 
             event = await this.eventService.createEmptyEvent(user.id);
             item = await this.itemService.createItem(itemId, event.id);
         } else {
             // if event EXISTS
-            item = await this.itemService.getItem(itemId);
             if (item && item.eventId === event.id) {
                 // toggle item to false (delete it)
                 // if it is last item of event, delete event and item will be deleted automatically
@@ -87,7 +82,7 @@ export class ScheduleService {
                     await this.itemService.deleteItem(itemId);
                 }
             } else if (item && item.eventId !== event.id) {
-                throw new ForbiddenException('You do not own selected item');
+                throw new WsException('You do not own selected item');
             } else {
                 // toggle item to true (create it)
                 item = await this.itemService.createItem(itemId, event.id);
@@ -100,7 +95,7 @@ export class ScheduleService {
     async deleteEvent(eventId: string, user: UserInterface) {
         const event = await this.eventService.getEvent(eventId);
         if (!event) {
-            throw new BadRequestException('Event does not exist');
+            throw new WsException('Event does not exist');
         }
 
         if (user.role === 'admin') {
@@ -109,7 +104,7 @@ export class ScheduleService {
             if (event.userId === user.id) {
                 return await this.eventService.deleteEvent(eventId);
             } else {
-                throw new ForbiddenException('You do not own this event');
+                throw new WsException('You do not own this event');
             }
         }
     }
@@ -133,25 +128,31 @@ export class ScheduleService {
                 schedule.days.push({
                     date: currentDate.format('DD-MM'),
                     name: this.getDayName(currentDate.day()).slice(0, 3),
-                    items: this.getItems(currentDate.format('YYYY-MM-DD')),
+                    items: await this.getItems(
+                        currentDate.format('YYYY-MM-DD')
+                    ),
                 });
             }
         }
 
-        console.log(schedule);
         return schedule;
     }
 
-    getItems(date: string) {
+    async getItems(date: string) {
         const start = dayjs().hour(this.configuration.startHour).minute(0);
         const end = this.configuration.endHour; // hours to minutes
         const step = this.configuration.step; // in minutes
 
         const items = [];
         for (let t = start; t.hour() < end; t = t.add(step, 'minute')) {
+            const id = `${date}/${t.format('HH:mm')}`;
+            const itemObject = await this.itemService.getItem(id);
+            const eventId = itemObject ? itemObject.eventId : null;
+
             items.push({
                 time: t.format('HH:mm'),
-                id: `${date}/${t.format('HH:mm')}`,
+                id: id,
+                eventId: eventId,
             });
         }
         return items;
@@ -185,5 +186,11 @@ export class ScheduleService {
         }
 
         return items;
+    }
+
+    async getAllEvents() {
+        return await this.eventService.getAllCompleteEvents({
+            withItems: true,
+        });
     }
 }

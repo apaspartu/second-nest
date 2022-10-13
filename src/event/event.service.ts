@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EventModel } from '../models';
+import { EventModel, ItemModel, UserModel } from '../models';
 import { InjectModel } from '@nestjs/sequelize';
 import { EventInfoInterface } from '../interfaces';
 
@@ -20,9 +20,15 @@ export class EventService {
     }
 
     async getIncompleteEvent(userId: string): Promise<EventModel> {
-        return this.eventModel.findOne({
+        const event = await this.eventModel.findOne({
             where: { userId: userId, isCompleted: false },
+            include: [UserModel, ItemModel],
         });
+        if (event) {
+            event.user.password = null;
+            event.user.sessionId = null;
+        }
+        return event;
     }
 
     async deleteEvent(id: string): Promise<boolean> {
@@ -44,5 +50,18 @@ export class EventService {
             { isCompleted: true },
             { where: { id: id } }
         );
+    }
+
+    async getAllCompleteEvents(options = { withItems: false }) {
+        let events = await this.eventModel.findAll({
+            where: { isCompleted: true },
+            include: options.withItems ? [UserModel, ItemModel] : UserModel,
+        });
+        events = events.map((event) => {
+            event.user.password = null;
+            event.user.sessionId = null;
+            return event;
+        });
+        return events;
     }
 }

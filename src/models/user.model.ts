@@ -7,7 +7,9 @@ import {
     PrimaryKey,
     DataType,
     Default,
+    HasMany,
 } from 'sequelize-typescript';
+import { EventModel } from './event.model';
 
 enum defaultValues {
     user = 'user',
@@ -42,4 +44,7 @@ export class UserModel extends Model<UserModel> {
     @Unique
     @Column
     sessionId: string;
+
+    @HasMany(() => EventModel)
+    events: EventModel[];
 }

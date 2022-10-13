@@ -9,6 +9,7 @@ enum RequiredVariables {
     DATABASE = 'DATABASE',
     USER = 'USER',
     PASSWORD = 'PASSWORD',
+    DBPORT = 'DBPORT',
 
     PASSWORD_SECRET = 'PASSWORD_SECRET',
 
@@ -37,7 +38,7 @@ class ConfigService<T extends RequiredVariables> {
         return {
             dialect: 'postgres',
             host: process.env.HOST,
-            port: 5432,
+            port: parseInt(process.env.DBPORT),
             username: process.env.USER,
             password: process.env.PASSWORD,
             database: process.env.DATABASE,
