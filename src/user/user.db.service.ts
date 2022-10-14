@@ -9,9 +9,13 @@ export class UserDbService {
 
     async getUserByOptions(
         options: WhereOptions,
-        throwIfNotFound = false
+        throwIfNotFound = false,
+        attributes = ['id', 'name', 'email', 'role', 'password', 'sessionId']
     ): Promise<UserModel> {
-        const profile = await this.userModel.findOne({ where: options });
+        const profile = await this.userModel.findOne({
+            where: options,
+            attributes,
+        });
         if (!profile && throwIfNotFound) {
             throw new NotFoundException();
         }
@@ -65,6 +69,14 @@ export class UserDbService {
     async setPassword(email: string, password: string) {
         const res = await this.userModel.update(
             { password: password },
+            { where: { email: email } }
+        );
+        return res[0] === 1;
+    }
+
+    async updateProfile(email, fields) {
+        const res = await this.userModel.update(
+            { ...fields },
             { where: { email: email } }
         );
         return res[0] === 1;

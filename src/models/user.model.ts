@@ -10,6 +10,7 @@ import {
     HasMany,
 } from 'sequelize-typescript';
 import { EventModel } from './event.model';
+import { ApiModelProperty } from '@nestjs/swagger/dist/decorators/api-model-property.decorator';
 
 enum defaultValues {
     user = 'user',
@@ -19,15 +20,18 @@ enum defaultValues {
     tableName: 'Users',
 })
 export class UserModel extends Model<UserModel> {
+    @ApiModelProperty()
     @PrimaryKey
     @Default(DataType.UUIDV4)
     @Column(DataType.UUID)
     id: string;
 
+    @ApiModelProperty()
     @AllowNull(false)
     @Column
     name: string;
 
+    @ApiModelProperty()
     @AllowNull(false)
     @Unique
     @Column
@@ -37,6 +41,7 @@ export class UserModel extends Model<UserModel> {
     @Column
     password: string;
 
+    @ApiModelProperty()
     @Default(defaultValues.user)
     @Column
     role: string;

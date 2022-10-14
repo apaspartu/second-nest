@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { EventModel, ItemModel, UserModel } from '../models';
 import { InjectModel } from '@nestjs/sequelize';
-import { EventInfoInterface } from '../interfaces';
+import {
+    EventInfoInterface,
+    UserInterface,
+    UserShortInfo,
+} from '../interfaces';
 
 @Injectable()
 export class EventService {
@@ -19,16 +23,14 @@ export class EventService {
         return this.eventModel.findOne({ where: { id: id } });
     }
 
-    async getIncompleteEvent(userId: string): Promise<EventModel> {
-        const event = await this.eventModel.findOne({
+    async getIncompleteEvent(userId: string) {
+        return await this.eventModel.findOne({
             where: { userId: userId, isCompleted: false },
-            include: [UserModel, ItemModel],
+            include: [
+                { model: UserModel, attributes: ['id', 'email', 'name'] },
+                ItemModel,
+            ],
         });
-        if (event) {
-            event.user.password = null;
-            event.user.sessionId = null;
-        }
-        return event;
     }
 
     async deleteEvent(id: string): Promise<boolean> {
@@ -53,15 +55,14 @@ export class EventService {
     }
 
     async getAllCompleteEvents(options = { withItems: false }) {
-        let events = await this.eventModel.findAll({
+        return await this.eventModel.findAll({
             where: { isCompleted: true },
-            include: options.withItems ? [UserModel, ItemModel] : UserModel,
+            include: options.withItems
+                ? [
+                      { model: UserModel, attributes: ['id', 'email', 'name'] },
+                      ItemModel,
+                  ]
+                : { model: UserModel, attributes: ['id', 'email', 'name'] },
         });
-        events = events.map((event) => {
-            event.user.password = null;
-            event.user.sessionId = null;
-            return event;
-        });
-        return events;
     }
 }

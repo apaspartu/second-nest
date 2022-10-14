@@ -16,87 +16,78 @@ import { VerifyEmailDto } from './dto/verifyEmail.dto';
 import { Request, Response } from 'express';
 import { ResetPasswordDto } from './dto/resetPasswordDto';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AccessTokenInterface, UserInterface } from '../interfaces';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
-    @ApiResponse({ status: 201, description: '{accessToken: string}' })
+    @ApiResponse({ type: AccessTokenInterface })
     @Post('sign-in')
     async signIn(
         @Body() loginUserDto: LoginUserDto,
         @Res({ passthrough: true }) res: Response
-    ) {
+    ): Promise<AccessTokenInterface> {
         return await this.authService.signIn(loginUserDto, res); //  access token
     }
 
-    @ApiResponse({ status: 201, description: 'boolean' })
+    @ApiResponse({ description: 'boolean' })
     @Post('verify-email')
     async verifyEmail(
         @Body() verifyEmailDto: VerifyEmailDto,
         @Req() req: Request
-    ) {
+    ): Promise<boolean> {
         const origin = req.headers.origin;
         return this.authService.verifyEmail(verifyEmailDto, origin);
     }
 
-    @ApiResponse({ status: 201, description: '{accessToken: string}' })
+    @ApiResponse({ type: AccessTokenInterface })
     @Post('create-user')
     async createUser(
         @Body() createProfileDto: CreateProfileDto,
         @Res({ passthrough: true }) res: Response
-    ) {
+    ): Promise<AccessTokenInterface> {
         return await this.authService.createUser(createProfileDto, res); //  access token
     }
 
-    @ApiResponse({ status: 201, description: '{accessToken: string}' })
+    @ApiResponse({ type: AccessTokenInterface })
     @Post('refresh')
     async refresh(
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response
-    ) {
+    ): Promise<AccessTokenInterface> {
         console.log(req.cookies['refreshToken']);
         const token = req.cookies['refreshToken'];
         return await this.authService.refresh(token, res); //  access token
     }
 
-    @ApiResponse({ status: 201, description: 'boolean' })
+    @ApiResponse({ description: 'boolean' })
     @Post('forgot-password')
     async forgotPassword(
         @Body() verifyEmailDto: VerifyEmailDto,
         @Req() req: Request
-    ) {
+    ): Promise<boolean> {
         const origin = req.headers.origin;
         return this.authService.forgotPassword(verifyEmailDto, origin);
     }
 
-    @ApiResponse({ status: 201, description: 'boolean' })
+    @ApiResponse({ description: 'boolean' })
     @Post('reset-password')
-    async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    async resetPassword(
+        @Body() resetPasswordDto: ResetPasswordDto
+    ): Promise<boolean> {
         return await this.authService.resetPassword(resetPasswordDto);
     }
 
-    @ApiResponse({ status: 201, description: 'boolean' })
+    @ApiResponse({ description: 'boolean' })
     @ApiBearerAuth()
     @Post('logout')
     @UseGuards(AuthHTTPGuard)
     async logout(
         @Req() req: Request,
         @Res({ passthrough: true }) res: Response
-    ) {
+    ): Promise<boolean> {
         return await this.authService.logout(req, res); // true if successfully logged out
-    }
-
-    @ApiResponse({
-        status: 200,
-        description:
-            '{email: string; id: string; name: string; role: string; sessionId: string}',
-    })
-    @ApiBearerAuth()
-    @Get('home')
-    @UseGuards(AuthHTTPGuard)
-    async home(@Req() req) {
-        return req.user;
     }
 }

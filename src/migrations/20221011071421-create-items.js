@@ -16,6 +16,8 @@ module.exports = {
     },
 
     async down(queryInterface, Sequelize) {
-        return await queryInterface.bulkDelete('Items');
+        return await queryInterface.sequelize.query(
+            `DROP TABLE IF EXISTS public."Items";`
+        );
     },
 };

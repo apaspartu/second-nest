@@ -10,7 +10,12 @@ async function bootstrap() {
 
     app.use(cookieParser());
 
-    const config = new DocumentBuilder().setTitle('Second Nest').build();
+    const config = new DocumentBuilder()
+        .setTitle('Conference Hall')
+        .setDescription('Web server api for Conference Hall application')
+        .setVersion('1.6.0')
+        .addBearerAuth()
+        .build();
     const document = SwaggerModule.createDocument(app, config);
 
     SwaggerModule.setup('api', app, document);

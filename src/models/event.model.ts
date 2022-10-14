@@ -36,12 +36,6 @@ export class EventModel extends Model {
     @Column
     title: string;
 
-    @Column
-    author: string;
-
-    @Column
-    email: string;
-
     @Column(DataType.TEXT)
     description: string;
 
