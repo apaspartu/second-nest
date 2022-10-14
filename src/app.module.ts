@@ -9,6 +9,7 @@ import { ScheduleModule } from './schedule/schedule.module';
 import { ItemModule } from './item/item.module';
 import { EventModule } from './event/event.module';
 import { ItemModel, EventModel, UserModel } from './models';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { ItemModel, EventModel, UserModel } from './models';
         ScheduleModule,
         EventModule,
         ItemModule,
+        ProfileModule,
     ],
     controllers: [AppController],
     providers: [AppService],

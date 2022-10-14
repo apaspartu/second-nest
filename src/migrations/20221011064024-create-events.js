@@ -7,8 +7,6 @@ module.exports = {
             `CREATE TABLE IF NOT EXISTS public."Events" (
                 id uuid NOT NULL,
                 "userId" uuid NOT NULL,
-                author varchar(255) NULL,
-                email varchar(255) NULL,
                 description text NULL,
                 color varchar(255) NULL,
                 "createdAt" timestamptz NOT NULL,
@@ -21,6 +19,8 @@ module.exports = {
     },
 
     async down(queryInterface, Sequelize) {
-        return await queryInterface.bulkDelete('Events');
+        return await queryInterface.sequelize.query(
+            `DROP TABLE IF EXISTS public."Events";`
+        );
     },
 };

@@ -10,4 +10,6 @@ COPY . .
 
 RUN npm run build
 
+RUN npm run run-migration
+
 CMD [ "node", "dist/main.js" ]

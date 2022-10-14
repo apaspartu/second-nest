@@ -48,8 +48,6 @@ export class ScheduleService {
 
         const eventInfo: EventInfoInterface = {
             ...dto,
-            author: user.name,
-            email: user.email,
         };
         await this.eventService.fillEmptyFields(event.id, eventInfo);
         await this.eventService.setEventCompleted(event.id);

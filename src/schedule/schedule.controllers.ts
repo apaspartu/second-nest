@@ -1,24 +1,11 @@
-import {
-    Body,
-    Controller,
-    Get,
-    ParseIntPipe,
-    Post,
-    Query,
-    Delete,
-    UseGuards,
-    Req,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
 import { ScheduleService } from './schedule.service';
-import { AuthHTTPGuard } from '../auth/authHTTP.guard';
 import { EventService } from '../event/event.service';
 import { ItemService } from '../item/item.service';
-import { CreateEventDto } from './dto/create-event.dto';
-import { ReserveItemDto } from './dto/reserve-item.dto';
-import { DeleteEventDto } from './dto/delete-event.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiImplicitQuery } from '@nestjs/swagger/dist/decorators/api-implicit-query.decorator';
+import { AccessTokenInterface } from '../interfaces';
+import { ScheduleInterface } from '../interfaces';
 
 @ApiTags('schedule')
 @Controller('schedule')
@@ -29,16 +16,16 @@ export class ScheduleController {
         private readonly itemService: ItemService
     ) {}
 
+    @ApiResponse({ type: ScheduleInterface })
     @ApiImplicitQuery({ name: 'year' })
     @ApiImplicitQuery({ name: 'month' })
     @Get()
     async get(
-        @Query('year', ParseIntPipe) year,
-        @Query('month', ParseIntPipe) month
-    ) {
+        @Query('year', ParseIntPipe) year: number,
+        @Query('month', ParseIntPipe) month: number
+    ): Promise<ScheduleInterface> {
         const template = await this.scheduleService.generate(year, month);
         const events = await this.eventService.getAllCompleteEvents();
-
         return {
             template,
             events,

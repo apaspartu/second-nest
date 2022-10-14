@@ -5,3 +5,5 @@ export * from './refresh-token-payload-interface';
 export * from './shedule-config.interface';
 export * from './event-info.interface';
 export * from './user.interface';
+export * from './access-token.interface';
+export * from './schedule.interface';
