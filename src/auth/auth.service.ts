@@ -6,7 +6,7 @@ import {
 import { JwtService } from './jwt.service';
 import * as cryptoJs from 'crypto-js';
 import { UserDbService } from '../user/user.db.service';
-import { UserModel } from '../models/user.model';
+import { UserModel } from '../models';
 import { CreateProfileDto } from './dto/createProfile.dto';
 import { LoginUserDto } from './dto/loginUser.dto';
 import { VerifyEmailDto } from './dto/verifyEmail.dto';
@@ -33,9 +33,6 @@ export class AuthService {
         // Generate JWT tokens
         const accessPayload = {
             email: profile.email,
-            id: profile.id,
-            name: profile.name,
-            role: profile.role,
             sessionId: sessionId,
         };
         const refreshPayload = { sessionId: sessionId };
@@ -75,9 +72,6 @@ export class AuthService {
         // Generate tokens
         const accessPayload = {
             email: profile.email,
-            id: profile.id,
-            name: profile.name,
-            role: profile.role,
             sessionId: sessionId,
         };
         const refreshPayload = { sessionId: sessionId };
@@ -174,9 +168,6 @@ export class AuthService {
         sessionId = this.generateSessionId();
         const accessPayload = {
             email: profile.email,
-            id: profile.id,
-            name: profile.name,
-            role: profile.role,
             sessionId: sessionId,
         };
         const refreshPayload = { sessionId: sessionId };

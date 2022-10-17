@@ -34,14 +34,13 @@ export class AuthWSGuard implements CanActivate {
                 return false;
             }
 
-            const user: UserInterface = {
-                email: jwt.email,
-                name: jwt.name,
-                role: jwt.role,
-                id: jwt.id,
-                sessionId: jwt.sessionId,
+            socket.user = {
+                email: profile.email,
+                name: profile.name,
+                role: profile.role,
+                id: profile.id,
+                sessionId: profile.sessionId,
             };
-            socket.user = user;
         } catch (e) {
             return false;
         }

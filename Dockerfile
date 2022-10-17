@@ -10,6 +10,8 @@ COPY . .
 
 RUN npm run build
 
+ENV MODE=PRODUCTION
+
 RUN npm run run-migration
 
 CMD [ "node", "dist/main.js" ]
