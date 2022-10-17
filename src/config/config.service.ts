@@ -11,6 +11,9 @@ enum RequiredVariables {
     PASSWORD = 'PASSWORD',
     DBPORT = 'DBPORT',
 
+    HOST_REMOTE = 'HOST_REMOTE',
+    PASSWORD_REMOTE = 'PASSWORD_REMOTE',
+
     PASSWORD_SECRET = 'PASSWORD_SECRET',
 
     ACCESS_TOKEN_EXPIRE_TIME = 'ACCESS_TOKEN_EXPIRE_TIME',
@@ -35,12 +38,19 @@ class ConfigService<T extends RequiredVariables> {
         });
     }
     getSequelizeConfig(): SequelizeOptions {
+        console.log(process.env.MODE);
         return {
             dialect: 'postgres',
-            host: process.env.HOST,
+            host:
+                process.env.MODE === 'PRODUCTION'
+                    ? process.env.HOST_REMOTE
+                    : process.env.HOST,
             port: parseInt(process.env.DBPORT),
             username: process.env.USER,
-            password: process.env.PASSWORD,
+            password:
+                process.env.MODE === 'PRODUCTION'
+                    ? process.env.PASSWORD_REMOTE
+                    : process.env.PASSWORD,
             database: process.env.DATABASE,
         };
     }

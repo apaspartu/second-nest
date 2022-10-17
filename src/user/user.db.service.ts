@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 import { WhereOptions } from 'sequelize';
 import { InjectModel } from '@nestjs/sequelize';
 import { UserModel } from '../models/user.model';
@@ -32,7 +36,7 @@ export class UserDbService {
             }
         }
         if (profile) {
-            throw new Error('This email is already taken');
+            throw new ForbiddenException('This email is already taken');
         }
 
         profile = await this.userModel.create({ name, email, password });

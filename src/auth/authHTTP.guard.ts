@@ -34,14 +34,13 @@ export class AuthHTTPGuard implements CanActivate {
                 return false;
             }
 
-            const user: UserInterface = {
-                email: jwt.email,
-                name: jwt.name,
-                role: jwt.role,
-                id: jwt.id,
-                sessionId: jwt.sessionId,
+            request.user = {
+                email: profile.email,
+                name: profile.name,
+                role: profile.role,
+                id: profile.id,
+                sessionId: profile.sessionId,
             };
-            request.user = user;
         } catch (e) {
             return false;
         }
